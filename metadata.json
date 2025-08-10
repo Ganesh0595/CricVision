@@ -1,0 +1,8 @@
+{
+  "name": "Copy of BCC Pune",
+  "description": "A comprehensive web application to manage cricket player data, match schedules, fees, and statistics. Features include player registration, a detailed dashboard with search and sort, match scheduling, fee tracking, and data import/export capabilities.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "prompt": ""
+}
