@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Player, Match, View, FeeStatus, Withdrawal } from './types';
 import { MOCK_PLAYERS, MOCK_MATCHES } from './constants';
@@ -17,9 +16,8 @@ import { LiveMatch } from './components/LiveMatch';
 import { ScorecardModal } from './components/ScorecardModal';
 import { CricketRules } from './components/CricketRules';
 import { FieldingPositions } from './components/FieldingPositions';
-import { SpeedGun } from './components/SpeedGun';
 import { Toast } from './components/Toast';
-import { DashboardIcon, CalendarIcon, FeeIcon, ImportExportIcon, RulesIcon, LogoutIcon, UserCircleIcon, MenuIcon, XIcon, FielderIcon, RupeeIcon, SpeedGunIcon } from './components/Icons';
+import { DashboardIcon, CalendarIcon, FeeIcon, ImportExportIcon, RulesIcon, LogoutIcon, UserCircleIcon, MenuIcon, XIcon, FielderIcon, RupeeIcon } from './components/Icons';
 
 const NavItem: React.FC<{ icon: React.ReactNode; label: string; isActive: boolean; onClick: () => void }> = ({ icon, label, isActive, onClick }) => (
     <button onClick={onClick} className={`flex items-center w-full px-4 py-3 rounded-lg transition-colors duration-200 ${isActive ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-700 hover:text-white'}`}>
@@ -36,7 +34,6 @@ const Sidebar: React.FC<{ currentView: View; setView: (view: View) => void; onLo
         { id: 'finance', icon: <RupeeIcon />, label: 'BCC Finance' },
         { id: 'rules', icon: <RulesIcon />, label: 'Cricket Rules' },
         { id: 'fielding-positions', icon: <FielderIcon />, label: 'Fielding Positions' },
-        { id: 'speed-gun', icon: <SpeedGunIcon />, label: 'Speed Gun' },
         { id: 'import-export', icon: <ImportExportIcon />, label: 'Import/Export' },
     ];
 
@@ -90,7 +87,6 @@ const viewTitles: Record<View, string> = {
     'fielding-positions': 'Fielding Positions',
     finance: 'BCC Finance',
     profile: 'My Profile',
-    'speed-gun': 'Ball Speed Gun',
 };
 
 const STORAGE_KEY = 'bccPuneAppData';
@@ -262,8 +258,6 @@ function App() {
         return <CricketRules />;
       case 'fielding-positions':
         return <FieldingPositions />;
-      case 'speed-gun':
-        return <SpeedGun onShowToast={showToast} />;
       case 'profile':
         return currentUser ? <Profile user={currentUser} onUpdateProfile={handleUpdatePlayer} onClose={() => setCurrentView('dashboard')} /> : <div className="p-8">Please log in to see your profile.</div>;
       default:

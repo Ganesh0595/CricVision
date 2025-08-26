@@ -127,10 +127,6 @@ export interface Match {
   completionDate?: string;
   manOfTheMatchId?: string;
   tieBreakers?: TieBreaker[];
-  fastestBall?: {
-    bowlerId: string;
-    speed: number; // in km/h
-  };
 }
 
 export type SortConfig = {
@@ -138,7 +134,7 @@ export type SortConfig = {
   direction: 'ascending' | 'descending';
 } | null;
 
-export type View = 'dashboard' | 'scheduling' | 'fees' | 'import-export' | 'rules' | 'profile' | 'fielding-positions' | 'finance' | 'speed-gun';
+export type View = 'dashboard' | 'scheduling' | 'fees' | 'import-export' | 'rules' | 'profile' | 'fielding-positions' | 'finance';
 
 export interface FieldPosition {
   x: number;

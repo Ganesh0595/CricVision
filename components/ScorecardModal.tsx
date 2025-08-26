@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Match, Player, PlayerRole, Innings, BatsmanStats, BowlOutAttempt } from '../types';
-import { BatIcon, BowlingIcon, AllRounderIcon, FileDownloadIcon, PdfIcon, ExcelIcon, XIcon, TrophyIcon, SpeedGunIcon } from './Icons';
+import { BatIcon, BowlingIcon, AllRounderIcon, FileDownloadIcon, PdfIcon, ExcelIcon, XIcon, TrophyIcon } from './Icons';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -88,11 +88,6 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({ match, players, 
             doc.text(`Man of the Match: ${getPlayerName(match.manOfTheMatchId)}`, 14, startY);
             startY += 8;
         }
-        if (match.fastestBall) {
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Fastest Ball: ${getPlayerName(match.fastestBall.bowlerId)} (${match.fastestBall.speed.toFixed(1)} km/h)`, 14, startY);
-            startY += 8;
-        }
 
         if(match.innings?.innings1) startY = addInningsToPdf(doc, match.innings.innings1, startY);
         if(match.innings?.innings2) { doc.addPage(); startY = 20; startY = addInningsToPdf(doc, match.innings.innings2, startY); }
@@ -146,9 +141,6 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({ match, players, 
         ];
         if (match.manOfTheMatchId) {
             summaryData.push(['Man of the Match', getPlayerName(match.manOfTheMatchId)]);
-        }
-        if (match.fastestBall) {
-            summaryData.push(['Fastest Ball', `${getPlayerName(match.fastestBall.bowlerId)} (${match.fastestBall.speed.toFixed(1)} km/h)`]);
         }
         const ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
         XLSX.utils.book_append_sheet(wb, ws_summary, 'Summary');
@@ -204,7 +196,7 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({ match, players, 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4" onClick={onClose}>
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto transform transition-all duration-300 scale-95 animate-in fade-in-0 zoom-in-95 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                <header className="flex-shrink-0 p-6 flex justify-between items-start border-b border-slate-200 dark:border-slate-700">
+                <header className="flex-shrink-0 p-6 flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{match.name}</h2>
                         <p className="text-amber-600 dark:text-amber-400 font-semibold">{resultDescription || `Winner: ${winner}`}</p>
@@ -212,12 +204,6 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({ match, players, 
                             <div className="mt-2 flex items-center gap-2 text-lg text-yellow-400">
                                 <TrophyIcon className="h-6 w-6 text-yellow-400" />
                                 <span>Man of the Match: <strong>{getPlayerName(manOfTheMatchId)}</strong></span>
-                            </div>
-                        )}
-                        {match.fastestBall && (
-                            <div className="mt-2 flex items-center gap-2 text-lg text-cyan-500 dark:text-cyan-400">
-                                <SpeedGunIcon />
-                                <span className="font-semibold">Fastest Ball: <strong>{getPlayerName(match.fastestBall.bowlerId)}</strong> - {match.fastestBall.speed.toFixed(1)} km/h</span>
                             </div>
                         )}
                     </div>

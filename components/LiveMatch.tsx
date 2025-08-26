@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Match, Player, PlayerRole, Innings, BatsmanStats, BowlOutAttempt, TieBreaker, LiveMatchStage, LiveState, LiveMatchProgress } from '../types';
-import { BatIcon, BowlingIcon, AllRounderIcon, FileDownloadIcon, PdfIcon, ExcelIcon, TrophyIcon, XIcon, UndoIcon, SpeedGunIcon } from './Icons';
+import { BatIcon, BowlingIcon, AllRounderIcon, FileDownloadIcon, PdfIcon, ExcelIcon, TrophyIcon, XIcon, UndoIcon } from './Icons';
 import { MATCH_FEE_PER_PLAYER } from '../constants';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -353,13 +353,6 @@ const ScorecardDisplay: React.FC<{ match: Match; players: Player[]; onExit: () =
             startY = 50;
         }
 
-        if (match.fastestBall) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text(`Fastest Ball: ${getPlayerName(match.fastestBall.bowlerId)} (${match.fastestBall.speed.toFixed(1)} km/h)`, 14, startY);
-            startY += 10;
-        }
-
         if (innings?.innings1) { startY = addInningsToPdf(doc, innings.innings1, startY); }
         if (innings?.innings2) { doc.addPage(); startY = 20; startY = addInningsToPdf(doc, innings.innings2, startY); }
 
@@ -420,9 +413,6 @@ const ScorecardDisplay: React.FC<{ match: Match; players: Player[]; onExit: () =
         ];
         if (manOfTheMatchId) {
             summaryData.push(['Man of the Match', getPlayerName(manOfTheMatchId)]);
-        }
-        if (match.fastestBall) {
-            summaryData.push(['Fastest Ball', `${getPlayerName(match.fastestBall.bowlerId)} (${match.fastestBall.speed.toFixed(1)} km/h)`]);
         }
         const ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
         XLSX.utils.book_append_sheet(wb, ws_summary, 'Summary');
@@ -499,12 +489,6 @@ const ScorecardDisplay: React.FC<{ match: Match; players: Player[]; onExit: () =
                       <span>Man of the Match: <strong>{getPlayerName(manOfTheMatchId)}</strong></span>
                   </div>
               )}
-              {match.fastestBall && (
-                <div className="mt-2 flex items-center justify-center gap-2 text-lg text-cyan-400">
-                    <SpeedGunIcon />
-                    <span>Fastest Ball: <strong>{getPlayerName(match.fastestBall.bowlerId)}</strong> - {match.fastestBall.speed.toFixed(1)} km/h</span>
-                </div>
-              )}
               <p className="text-sm text-slate-400 mt-2">Toss won by {match.tossWinner}, who chose to {match.decision}.</p>
             </header>
             <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
@@ -569,7 +553,7 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
   }));
   
   const [liveState, setLiveState] = useState<LiveState>(match.liveProgress?.liveState || ({ onStrikeBatsmanId: '', offStrikeBatsmanId: '', currentBowlerId: '', previousBowlerId: '', currentOverEvents: [] as string[], target: 0, isFreeHit: false }));
-  const [overHistory, setOverHistory] = useState<{ innings: typeof innings, liveState: LiveState, fastestBall: typeof fastestBall }[]>([]);
+  const [overHistory, setOverHistory] = useState<{ innings: typeof innings, liveState: LiveState }[]>([]);
 
   const [extraEventInfo, setExtraEventInfo] = useState<{ type: 'Wd' | 'Nb' | null }>({ type: null });
   const [wicketTakerInfo, setWicketTakerInfo] = useState<{ step: 'type' | 'catcher' | 'runout_batsman' | 'runout_fielder' | null, batsmanOutId?: string }>({ step: null });
@@ -583,10 +567,6 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
   const [bowlOutState, setBowlOutState] = useState<{ attempts: BowlOutAttempt[], currentTeam: string, currentTurn: number, teamABowlers: string[], teamBBowlers: string[] }>({ attempts: [], currentTeam: '', currentTurn: 1, teamABowlers: [], teamBBowlers: [] });
   const [showBowlOutBowlerSelection, setShowBowlOutBowlerSelection] = useState(false);
 
-  const [fastestBall, setFastestBall] = useState(match.fastestBall);
-  const [currentSpeed, setCurrentSpeed] = useState('');
-  const [speedForWicket, setSpeedForWicket] = useState<number | undefined>();
-
   useEffect(() => {
     if (match.status === 'Live' && stage !== 'matchOver') {
         const currentProgress: LiveMatchProgress = {
@@ -596,16 +576,15 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
             liveState,
         };
 
-        if (JSON.stringify(match.liveProgress) !== JSON.stringify(currentProgress) || JSON.stringify(match.fastestBall) !== JSON.stringify(fastestBall)) {
+        if (JSON.stringify(match.liveProgress) !== JSON.stringify(currentProgress)) {
             onUpdateMatch({
                 ...match,
                 innings: isSuperOver ? match.innings : currentProgress.innings, 
                 liveProgress: currentProgress,
-                fastestBall,
             });
         }
     }
-  }, [stage, currentInningsNum, innings, liveState, match, onUpdateMatch, isSuperOver, fastestBall]);
+  }, [stage, currentInningsNum, innings, liveState, match, onUpdateMatch, isSuperOver]);
 
   const getPlayerName = (id: string | null): string => {
       if (!id) return 'Unknown';
@@ -686,8 +665,7 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
           completionDate: new Date().toISOString(),
           innings: finalInnings,
           tieBreakers: finalTieBreakers,
-          liveProgress: undefined, // Explicitly clear live progress
-          fastestBall: fastestBall,
+          liveProgress: undefined // Explicitly clear live progress
       };
       
       let finalMatchObject: Match = { ...match, ...finalMatchData };
@@ -713,7 +691,6 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
         if (lastState) {
             setInnings(lastState.innings);
             setLiveState(lastState.liveState);
-            setFastestBall(lastState.fastestBall);
             onShowToast('Last event undone.', 'success');
         }
 
@@ -721,8 +698,8 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
     });
   };
   
-  const handleBallPlayed = (event: string, options?: { batsmanOutId?: string; howOut?: 'Bowled' | 'Caught' | 'LBW' | 'Run Out'; fielderId?: string; runsScored?: number; newBatsmanIdForRunOut?: string; batsmenCrossed?: boolean; }, speed?: number) => {
-    setOverHistory(prev => [...prev, { innings, liveState, fastestBall }]);
+  const handleBallPlayed = (event: string, options?: { batsmanOutId?: string; howOut?: 'Bowled' | 'Caught' | 'LBW' | 'Run Out'; fielderId?: string; runsScored?: number; newBatsmanIdForRunOut?: string; batsmenCrossed?: boolean; }) => {
+    setOverHistory(prev => [...prev, { innings, liveState }]);
 
     let newInningsState = JSON.parse(JSON.stringify(innings));
     let currentInningData: Innings = newInningsState[`innings${currentInningsNum}`];
@@ -774,13 +751,6 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
         currentInningData.totalLegalBalls += 1;
         if (originalStrikerId) currentInningData.batsmenStats[originalStrikerId].balls += 1;
         if (currentBowlerId) currentInningData.bowlerStats[currentBowlerId].ballsBowled += 1;
-
-        if (speed && currentBowlerId) {
-            if (!fastestBall || speed > fastestBall.speed) {
-                setFastestBall({ bowlerId: currentBowlerId, speed });
-                onShowToast(`New fastest ball: ${speed} km/h!`, 'success');
-            }
-        }
     }
 
     let batsmanOutId = null;
@@ -919,7 +889,6 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
         target,
         isFreeHit: isNextBallFreeHit
     });
-    setCurrentSpeed('');
 };
 
 
@@ -1014,8 +983,7 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
 
   const handleShortRunConfirm = ({ scored, attempted }: { scored: number; attempted: number }) => {
     const event = `${scored}S${attempted}`;
-    const speed = parseFloat(currentSpeed) || undefined;
-    handleBallPlayed(event, {}, speed);
+    handleBallPlayed(event);
     setIsShortRunModalOpen(false);
   };
 
@@ -1188,7 +1156,7 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
             {(!onStrikeBatsmanId || !offStrikeBatsmanId) && !runOutResolution && <SelectionModal title={!onStrikeBatsmanId ? "Select New Striker" : "Select New Non-Striker"} players={availableBatsmen} onSelect={!onStrikeBatsmanId ? handleNewBatsmanSelect : handleNewNonStrikerSelect}/>}
             {!currentBowlerId && onStrikeBatsmanId && offStrikeBatsmanId && <SelectionModal title="Select New Bowler" players={availableBowlers} onSelect={handleNewBowlerSelect} />}
             {wicketTakerInfo.step && <WicketTakerModal isFreeHit={liveState.isFreeHit} step={wicketTakerInfo.step} onClose={() => setWicketTakerInfo({ step: null })} bowlingTeamPlayers={bowlingTeamPlayers} onStrikeBatsman={onStrikeBatsman} offStrikeBatsman={offStrikeBatsman} onBatsmanOutSelect={(batsmanId) => { setWicketTakerInfo({ step: 'runout_fielder', batsmanOutId: batsmanId }); }} onDismissalSelect={(type) => { 
-                if (type === 'Bowled' || type === 'LBW') { handleBallPlayed('W', { howOut: type }, speedForWicket); setWicketTakerInfo({ step: null }); } 
+                if (type === 'Bowled' || type === 'LBW') { handleBallPlayed('W', { howOut: type }); setWicketTakerInfo({ step: null }); } 
                 else if (type === 'Caught') { setWicketTakerInfo({ step: 'catcher' }); } 
                 else if (type === 'Run Out') { setWicketTakerInfo({ step: null }); setRunOutRunsSelection(true); } 
             }} onFielderSelect={(fielderId, dismissalType) => { 
@@ -1197,7 +1165,7 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
                        setWicketFlowState(prev => ({ ...prev!, batsmanOutId: wicketTakerInfo.batsmanOutId, fielderId }));
                        setRunOutResolution(true);
                     }
-                } else { handleBallPlayed('W', { howOut: dismissalType, fielderId }, speedForWicket); }
+                } else { handleBallPlayed('W', { howOut: dismissalType, fielderId }); }
                 setWicketTakerInfo({ step: null });
              }} />}
             <ShortRunModal isOpen={isShortRunModalOpen} onClose={() => setIsShortRunModalOpen(false)} onSubmit={handleShortRunConfirm} />
@@ -1223,7 +1191,7 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
                     fielderId,
                     newBatsmanIdForRunOut: newBatsmanId,
                     batsmenCrossed,
-                }, speedForWicket);
+                });
                 setRunOutResolution(false);
                 setWicketFlowState(null);
             }} />}
@@ -1280,7 +1248,7 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
                         ))}
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-4">
-                        <button onClick={() => { setSpeedForWicket(parseFloat(currentSpeed) || undefined); setRunOutRunsSelection(true); setExtraEventInfo({ type: null }); }} className="p-3 rounded-lg font-bold text-lg transition-transform transform hover:scale-105 bg-rose-600 hover:bg-rose-700">
+                        <button onClick={() => { setRunOutRunsSelection(true); setExtraEventInfo({ type: null }); }} className="p-3 rounded-lg font-bold text-lg transition-transform transform hover:scale-105 bg-rose-600 hover:bg-rose-700">
                             Run Out
                         </button>
                         <button onClick={() => setExtraEventInfo({ type: null })} className="p-3 rounded-lg font-semibold transition-colors bg-slate-600 hover:bg-slate-500">
@@ -1292,30 +1260,17 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
             : (
               <div>
                 <div className={`bg-slate-800 p-4 rounded-lg ${isPaused ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <div className="flex items-center justify-center gap-3 mb-4">
-                        <input 
-                            type="number"
-                            placeholder="Speed"
-                            value={currentSpeed}
-                            onChange={e => setCurrentSpeed(e.target.value)}
-                            disabled={isPaused}
-                            className="w-28 p-2 text-center bg-slate-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono text-lg"
-                        />
-                        <span className="font-semibold text-slate-400">km/h</span>
-                    </div>
                     <div className="flex flex-wrap items-center justify-center gap-3">
                         {['1', '2', '3', '4', '6', '0', 'Wd', 'SR', 'Nb'].map(event => (
                             <button
                                 key={event}
                                 onClick={() => {
-                                    const speed = parseFloat(currentSpeed) || undefined;
-                                    setSpeedForWicket(speed);
                                     if (event === 'Wd' || event === 'Nb') {
                                         setExtraEventInfo({ type: event });
                                     } else if (event === 'SR') {
                                         setIsShortRunModalOpen(true);
                                     } else {
-                                        handleBallPlayed(event, {}, speed);
+                                        handleBallPlayed(event);
                                     }
                                 }}
                                 disabled={isPaused}
@@ -1327,7 +1282,6 @@ export const LiveMatch: React.FC<LiveMatchProps> = ({ match, players, onUpdateMa
                         <button
                             key="Wicket"
                             onClick={() => {
-                                setSpeedForWicket(parseFloat(currentSpeed) || undefined);
                                 if (liveState.isFreeHit) {
                                     setRunOutRunsSelection(true);
                                 } else {
